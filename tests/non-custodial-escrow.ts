@@ -14,8 +14,12 @@ describe("NonCustodialEscrow", () => {
   const seller = provider.wallet.publicKey; // anchor.web3.Keypair.generate();
   const payer = (provider.wallet as NodeWallet).payer;
   const authority = anchor.web3.Keypair.generate();
+
   const buyer = anchor.web3.Keypair.generate();
+  console.log(`Buyer :: `, buyer.publicKey.toString());
+
   const escrowedXTokens = anchor.web3.Keypair.generate();
+  console.log(`escrowedXTokens :: `, escrowedXTokens.publicKey.toString());
   let x_mint;
   let y_mint;
   let sellers_x_token;
@@ -29,11 +33,13 @@ describe("NonCustodialEscrow", () => {
       buyer.publicKey,
       1 * LAMPORTS_PER_SOL
     );
+
     // Derive escrow address
     [escrow] = await anchor.web3.PublicKey.findProgramAddress(
       [anchor.utils.bytes.utf8.encode("escrow"), seller.toBuffer()],
       program.programId
     );
+
     x_mint = await splToken.createMint(
       provider.connection,
       payer,
@@ -41,6 +47,8 @@ describe("NonCustodialEscrow", () => {
       null,
       6
     );
+    console.log(`x_mint :: `, x_mint.toString());
+
     y_mint = await splToken.createMint(
       provider.connection,
       payer,
@@ -48,7 +56,7 @@ describe("NonCustodialEscrow", () => {
       null,
       6
     );
-    console.log("Mint Accounts Initialized---------");
+    console.log(`y_mint :: `, y_mint.toString());
 
     // seller's x and y token account
     sellers_x_token = await splToken.createAccount(
@@ -57,6 +65,7 @@ describe("NonCustodialEscrow", () => {
       x_mint,
       seller
     );
+    console.log(`sellers_x_token :: `, sellers_x_token.toString());
 
     await splToken.mintTo(
       provider.connection,
@@ -74,7 +83,7 @@ describe("NonCustodialEscrow", () => {
       y_mint,
       seller
     );
-    console.log("Seller Token Accounts Initialized------");
+    console.log(`sellers_y_token :: `, sellers_y_token.toString());
 
     // buyer's x and y token account
     buyer_x_token = await splToken.createAccount(
@@ -83,6 +92,7 @@ describe("NonCustodialEscrow", () => {
       x_mint,
       buyer.publicKey
     );
+    console.log(`buyer_x_token :: `, buyer_x_token.toString());
 
     buyer_y_token = await splToken.createAccount(
       provider.connection,
@@ -90,6 +100,7 @@ describe("NonCustodialEscrow", () => {
       y_mint,
       buyer.publicKey
     );
+    console.log(`buyer_y_token :: `, buyer_y_token.toString());
 
     await splToken.mintTo(
       provider.connection,
@@ -100,7 +111,6 @@ describe("NonCustodialEscrow", () => {
       100000000000,
       []
     );
-    console.log("Buyer Token Accounts Initialized-------------");
   });
 
   it("Initialize escrow", async () => {
@@ -120,7 +130,7 @@ describe("NonCustodialEscrow", () => {
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .signers([escrowedXTokens])
-      .rpc();
+      .rpc({ skipPreflight: true });
   });
 
   it("Execute the trade", async () => {
@@ -136,7 +146,7 @@ describe("NonCustodialEscrow", () => {
         tokenProgram: splToken.TOKEN_PROGRAM_ID,
       })
       .signers([buyer])
-      .rpc();
+      .rpc({ skipPreflight: true });
   });
 
   it("Cancle the trade", async () => {
@@ -149,6 +159,6 @@ describe("NonCustodialEscrow", () => {
         sellerXToken: sellers_x_token,
         tokenProgram: splToken.TOKEN_PROGRAM_ID,
       })
-      .rpc();
+      .rpc({ skipPreflight: true });
   });
 });
